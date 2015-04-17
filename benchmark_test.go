@@ -4,8 +4,8 @@ import (
 	"math/rand"
 	"testing"
     "github.com/willf/bitset"
-    "https://github.com/tgruben/roaring"
-    "https://github.com/fzandona/goroar"
+    "github.com/tgruben/roaring"
+    "github.com/fzandona/goroar"
 	"fmt"
 )
 
