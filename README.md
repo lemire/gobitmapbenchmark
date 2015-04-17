@@ -7,7 +7,7 @@ A Go project to benchmark various bitmap implementations (this is not a library!
 
   - go get github.com/willf/bitset
   - go get github.com/tgruben/roaring
-  - go get https://github.com/fzandona/goroar
+  - go get github.com/fzandona/goroar
 
 ### Usage 
 
