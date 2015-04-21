@@ -80,7 +80,7 @@ func BenchmarkIntersectionGoroar(b *testing.B) {
 	card := 0
 	for j := 0; j < b.N; j++ {
 	   	s3 := s1.Clone()
-		s3.Or(s2)
+		s3.And(s2)
 		card = card + s3.Cardinality()
 	}
 }
@@ -156,7 +156,7 @@ func BenchmarkIntersectionDenseGoroar(b *testing.B) {
 	card := 0
 	for j := 0; j < b.N; j++ {
 	   	s3 := s1.Clone()
-		s3.Or(s2)
+		s3.And(s2)
 		card = card + s3.Cardinality()
 	}
 }
@@ -172,8 +172,8 @@ func BenchmarkUnionBitset(b *testing.B) {
 		s1.Set(uint(r.Int31n(int32(sz))))
 	}
 	s2 := bitset.New(0)
-	sz = 100000000
-	initsize = 65000
+	sz = 1000000
+	initsize = 650
 	for i := 0; i < initsize; i++ {
 		s2.Set(uint(r.Int31n(int32(sz))))
 	}
@@ -196,8 +196,8 @@ func BenchmarkUnionRoaring(b *testing.B) {
 		s1.Add(int(r.Int31n(int32(sz))))
 	}
 	s2 := roaring.NewRoaringBitmap()
-	sz = 100000000
-	initsize = 65000
+	sz = 1000000
+	initsize = 650
 	for i := 0; i < initsize; i++ {
 		s2.Add(int(r.Int31n(int32(sz))))
 	}
@@ -220,8 +220,8 @@ func BenchmarkUnionRoaringAlt(b *testing.B) {
 		s1.Add(int(r.Int31n(int32(sz))))
 	}
 	s2 := roaring.NewRoaringBitmap()
-	sz = 100000000
-	initsize = 65000
+	sz = 1000000
+	initsize = 650
 	for i := 0; i < initsize; i++ {
 		s2.Add(int(r.Int31n(int32(sz))))
 	}
@@ -233,8 +233,9 @@ func BenchmarkUnionRoaringAlt(b *testing.B) {
 	}
 }
 
+
 // go test -bench BenchmarkUnion -run -
-func BenchmarkUnionGoroar(b *testing.B) {
+func BenchmarkUnionGoRoar(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := goroar.New()
@@ -244,23 +245,22 @@ func BenchmarkUnionGoroar(b *testing.B) {
 		s1.Add(uint32(r.Int31n(int32(sz))))
 	}
 	s2 := goroar.New()
-	sz = 100000000
-	initsize = 65000
+	sz = 1000000
+	initsize = 650
 	for i := 0; i < initsize; i++ {
 		s2.Add(uint32(r.Int31n(int32(sz))))
 	}
 	b.StartTimer()
 	card := 0
 	for j := 0; j < b.N; j++ {
-		s3 := s1.Clone()
-		s3.Or(s2)
+	   	s3 := s1.Clone()
+		s3.Or(s2) // goroar cheats here
 		card = card + s3.Cardinality()
 	}
 }
 
-
 // go test -bench BenchmarkUnion -run -
-func BenchmarkUnionGoroarAlt(b *testing.B) {
+func BenchmarkUnionGoRoarAlt(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := goroar.New()
@@ -270,16 +270,16 @@ func BenchmarkUnionGoroarAlt(b *testing.B) {
 		s1.Add(uint32(r.Int31n(int32(sz))))
 	}
 	s2 := goroar.New()
-	sz = 100000000
-	initsize = 65000
+	sz = 1000000
+	initsize = 650
 	for i := 0; i < initsize; i++ {
 		s2.Add(uint32(r.Int31n(int32(sz))))
 	}
 	b.StartTimer()
 	card := 0
 	for j := 0; j < b.N; j++ {
-		s3 := s2.Clone()
-		s3.Or(s1)
+	   	s3 := s1.Clone()
+		s3.Or(s2)
 		card = card + s3.Cardinality()
 	}
 }
