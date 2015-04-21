@@ -9,7 +9,6 @@ import (
 	"testing"
 )
 
-
 // BENCHMARKS, to run them type "go test -bench Benchmark -run -"
 
 // go test -bench BenchmarkIntersection -run -
@@ -79,14 +78,11 @@ func BenchmarkIntersectionGoroar(b *testing.B) {
 	b.StartTimer()
 	card := 0
 	for j := 0; j < b.N; j++ {
-	   	s3 := s1.Clone()
+		s3 := s1.Clone()
 		s3.And(s2)
 		card = card + s3.Cardinality()
 	}
 }
-
-
-
 
 // go test -bench BenchmarkIntersectionDense -run -
 func BenchmarkIntersectionDenseBitset(b *testing.B) {
@@ -155,7 +151,7 @@ func BenchmarkIntersectionDenseGoroar(b *testing.B) {
 	b.StartTimer()
 	card := 0
 	for j := 0; j < b.N; j++ {
-	   	s3 := s1.Clone()
+		s3 := s1.Clone()
 		s3.And(s2)
 		card = card + s3.Cardinality()
 	}
@@ -233,7 +229,6 @@ func BenchmarkUnionRoaringAlt(b *testing.B) {
 	}
 }
 
-
 // go test -bench BenchmarkUnion -run -
 func BenchmarkUnionGoRoar(b *testing.B) {
 	b.StopTimer()
@@ -253,7 +248,7 @@ func BenchmarkUnionGoRoar(b *testing.B) {
 	b.StartTimer()
 	card := 0
 	for j := 0; j < b.N; j++ {
-	   	s3 := s1.Clone()
+		s3 := s1.Clone()
 		s3.Or(s2) // goroar cheats here
 		card = card + s3.Cardinality()
 	}
@@ -278,12 +273,11 @@ func BenchmarkUnionGoRoarAlt(b *testing.B) {
 	b.StartTimer()
 	card := 0
 	for j := 0; j < b.N; j++ {
-	   	s3 := s1.Clone()
+		s3 := s1.Clone()
 		s3.Or(s2)
 		card = card + s3.Cardinality()
 	}
 }
-
 
 // go test -bench BenchmarkSize -run -
 func BenchmarkSizeBitset(b *testing.B) {
@@ -324,7 +318,6 @@ func BenchmarkSizeRoaring(b *testing.B) {
 	fmt.Printf("%.1f MB ", float32(s1.GetSerializedSizeInBytes()+s2.GetSerializedSizeInBytes())/(1024.0*1024))
 }
 
-
 // go test -bench BenchmarkSize -run -
 func BenchmarkSizeGoroar(b *testing.B) {
 	b.StopTimer()
@@ -343,9 +336,6 @@ func BenchmarkSizeGoroar(b *testing.B) {
 	}
 	fmt.Printf("%.1f MB ", float32(s1.SizeInBytes()+s2.SizeInBytes())/(1024.0*1024))
 }
-
-
-
 
 func BenchmarkSetBitset(b *testing.B) {
 	b.StopTimer()
@@ -382,9 +372,6 @@ func BenchmarkSetGoroar(b *testing.B) {
 	}
 }
 
-
-
-
 func BenchmarkGetTestBitSet(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
@@ -416,7 +403,6 @@ func BenchmarkGetTestRoaring(b *testing.B) {
 	}
 }
 
-
 // go test -bench BenchmarkGetTest -run -
 func BenchmarkGetTestGoroar(b *testing.B) {
 	b.StopTimer()
@@ -432,8 +418,6 @@ func BenchmarkGetTestGoroar(b *testing.B) {
 		s.Contains(uint32(r.Int31n(int32(sz))))
 	}
 }
-
-
 
 func BenchmarkCountBitset(b *testing.B) {
 	b.StopTimer()
@@ -451,7 +435,6 @@ func BenchmarkCountBitset(b *testing.B) {
 	}
 }
 
-
 // go test -bench BenchmarkCount -run -
 func BenchmarkCountRoaring(b *testing.B) {
 	b.StopTimer()
@@ -467,7 +450,6 @@ func BenchmarkCountRoaring(b *testing.B) {
 		s.GetCardinality()
 	}
 }
-
 
 // go test -bench BenchmarkCount -run -
 func BenchmarkCountGoroar(b *testing.B) {
@@ -504,7 +486,6 @@ func BenchmarkIterateBitset(b *testing.B) {
 	}
 }
 
-
 // go test -bench BenchmarkIterate -run -
 func BenchmarkIterateRoaring(b *testing.B) {
 	b.StopTimer()
@@ -540,11 +521,10 @@ func BenchmarkIterateGoroar(b *testing.B) {
 	for j := 0; j < b.N; j++ {
 		c := uint32(0)
 		for _ = range s.Iterator() {
-		  c++
+			c++
 		}
 	}
 }
-
 
 // go test -bench BenchmarkSparseIterate -run -
 func BenchmarkSparseIterateBitset(b *testing.B) {
@@ -564,8 +544,6 @@ func BenchmarkSparseIterateBitset(b *testing.B) {
 		}
 	}
 }
-
-
 
 // go test -bench BenchmarkSparseIterate -run -
 func BenchmarkSparseIterateRoaring(b *testing.B) {
@@ -588,7 +566,6 @@ func BenchmarkSparseIterateRoaring(b *testing.B) {
 	}
 }
 
-
 // go test -bench BenchmarkSparseIterate -run -
 func BenchmarkSparseIterateGoroar(b *testing.B) {
 	b.StopTimer()
@@ -603,10 +580,7 @@ func BenchmarkSparseIterateGoroar(b *testing.B) {
 	for j := 0; j < b.N; j++ {
 		c := uint(0)
 		for _ = range s.Iterator() {
-		  c++
+			c++
 		}
 	}
 }
-
-
-
