@@ -105,11 +105,11 @@ func BenchmarkIntersectionDenseBitset(b *testing.B) {
 	r := rand.New(rand.NewSource(0))
 	s1 := bitset.New(0)
 	for i := 0; i < N1; i++ {
-		s1.Set(uint(r.Int31n(int32(SZ1))))
+		s1.Set(uint(r.Int31n(int32(SZ1 / 10))))
 	}
 	s2 := bitset.New(0)
 	for i := 0; i < N2; i++ {
-		s2.Set(uint(r.Int31n(int32(SZ2))))
+		s2.Set(uint(r.Int31n(int32(SZ2 / 10))))
 	}
 	b.StartTimer()
 	card := uint(0)
@@ -125,11 +125,11 @@ func BenchmarkIntersectionDenseCRoaring(b *testing.B) {
 	r := rand.New(rand.NewSource(0))
 	s1 := gocroaring.New()
 	for i := 0; i < N1; i++ {
-		s1.Add(uint32(r.Int31n(int32(SZ1))))
+		s1.Add(uint32(r.Int31n(int32(SZ1 / 10))))
 	}
 	s2 := gocroaring.New()
 	for i := 0; i < N2; i++ {
-		s2.Add(uint32(r.Int31n(int32(SZ2))))
+		s2.Add(uint32(r.Int31n(int32(SZ2 / 10))))
 	}
 	b.StartTimer()
 	card := 0
@@ -145,11 +145,11 @@ func BenchmarkIntersectionDenseRoaring(b *testing.B) {
 	r := rand.New(rand.NewSource(0))
 	s1 := roaring.New()
 	for i := 0; i < N1; i++ {
-		s1.Add(uint32(r.Int31n(int32(SZ1))))
+		s1.Add(uint32(r.Int31n(int32(SZ1 / 10))))
 	}
 	s2 := roaring.New()
 	for i := 0; i < N2; i++ {
-		s2.Add(uint32(r.Int31n(int32(SZ2))))
+		s2.Add(uint32(r.Int31n(int32(SZ2 / 10))))
 	}
 	b.StartTimer()
 	card := 0
@@ -165,11 +165,11 @@ func BenchmarkIntersectionDenseGoroar(b *testing.B) {
 	r := rand.New(rand.NewSource(0))
 	s1 := goroar.New()
 	for i := 0; i < N1; i++ {
-		s1.Add(uint32(r.Int31n(int32(SZ1))))
+		s1.Add(uint32(r.Int31n(int32(SZ1 / 10))))
 	}
 	s2 := goroar.New()
 	for i := 0; i < N2; i++ {
-		s2.Add(uint32(r.Int31n(int32(SZ2))))
+		s2.Add(uint32(r.Int31n(int32(SZ2 / 10))))
 	}
 	b.StartTimer()
 	card := 0
