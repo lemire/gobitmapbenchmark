@@ -205,16 +205,12 @@ func BenchmarkUnionCRoaring(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := gocroaring.New()
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Add(uint32(r.Int31n(int32(SZ1))))
 	}
 	s2 := gocroaring.New()
-	sz = 1000000
-	initsize = 650
-	for i := 0; i < initsize; i++ {
-		s2.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Add(uint32(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := 0
@@ -229,16 +225,12 @@ func BenchmarkUnionRoaring(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := roaring.New()
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Add(uint32(r.Int31n(int32(SZ1))))
 	}
 	s2 := roaring.New()
-	sz = 1000000
-	initsize = 650
-	for i := 0; i < initsize; i++ {
-		s2.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Add(uint32(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := 0
@@ -253,16 +245,12 @@ func BenchmarkUnionGoRoar(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := goroar.New()
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Add(uint32(r.Int31n(int32(SZ1))))
 	}
 	s2 := goroar.New()
-	sz = 1000000
-	initsize = 650
-	for i := 0; i < initsize; i++ {
-		s2.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Add(uint32(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := 0
@@ -278,16 +266,12 @@ func BenchmarkSizeBitset(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := bitset.New(0)
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Set(uint(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Set(uint(r.Int31n(int32(SZ1))))
 	}
 	s2 := bitset.New(0)
-	sz = 100000000
-	initsize = 65000
-	for i := 0; i < initsize; i++ {
-		s2.Set(uint(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Set(uint(r.Int31n(int32(SZ2))))
 	}
 	fmt.Printf("%.1f MB ", float32(s1.BinaryStorageSize()+s2.BinaryStorageSize())/(1024.0*1024))
 
