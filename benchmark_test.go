@@ -2,31 +2,33 @@ package roaring
 
 import (
 	"fmt"
-	"github.com/fzandona/goroar"
-	"github.com/RoaringBitmap/roaring"
-	"github.com/willf/bitset"
-  "github.com/RoaringBitmap/gocroaring"
 	"math/rand"
 	"testing"
+
+	"github.com/RoaringBitmap/gocroaring"
+	"github.com/RoaringBitmap/roaring"
+	"github.com/fzandona/goroar"
+	"github.com/willf/bitset"
 )
 
 // BENCHMARKS, to run them type "go test -bench Benchmark -run -"
+const SZ1 = 15000000
+const N1 = 650000
+
+const SZ2 = 100000000
+const N2 = 650000
 
 // go test -bench BenchmarkIntersection -run -
 func BenchmarkIntersectionBitset(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := bitset.New(0)
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Set(uint(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Set(uint(r.Int31n(int32(SZ1))))
 	}
 	s2 := bitset.New(0)
-	sz = 100000000
-	initsize = 65000
-	for i := 0; i < initsize; i++ {
-		s2.Set(uint(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Set(uint(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := uint(0)
@@ -41,16 +43,12 @@ func BenchmarkIntersectionCRoaring(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := gocroaring.New()
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Add(uint32(r.Int31n(int32(SZ1))))
 	}
 	s2 := gocroaring.New()
-	sz = 100000000
-	initsize = 65000
-	for i := 0; i < initsize; i++ {
-		s2.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Add(uint32(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := 0
@@ -65,16 +63,12 @@ func BenchmarkIntersectionRoaring(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := roaring.New()
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Add(uint32(r.Int31n(int32(SZ1))))
 	}
 	s2 := roaring.New()
-	sz = 100000000
-	initsize = 65000
-	for i := 0; i < initsize; i++ {
-		s2.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Add(uint32(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := 0
@@ -89,16 +83,12 @@ func BenchmarkIntersectionGoroar(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := goroar.New()
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Add(uint32(r.Int31n(int32(SZ1))))
 	}
 	s2 := goroar.New()
-	sz = 100000000
-	initsize = 65000
-	for i := 0; i < initsize; i++ {
-		s2.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Add(uint32(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := 0
@@ -114,16 +104,12 @@ func BenchmarkIntersectionDenseBitset(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := bitset.New(0)
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Set(uint(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Set(uint(r.Int31n(int32(SZ1))))
 	}
 	s2 := bitset.New(0)
-	sz = 10000000
-	initsize = 65000
-	for i := 0; i < initsize; i++ {
-		s2.Set(uint(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Set(uint(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := uint(0)
@@ -138,16 +124,12 @@ func BenchmarkIntersectionDenseCRoaring(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := gocroaring.New()
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Add(uint32(r.Int31n(int32(SZ1))))
 	}
 	s2 := gocroaring.New()
-	sz = 10000000
-	initsize = 65000
-	for i := 0; i < initsize; i++ {
-		s2.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Add(uint32(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := 0
@@ -157,22 +139,17 @@ func BenchmarkIntersectionDenseCRoaring(b *testing.B) {
 	}
 }
 
-
 // go test -bench BenchmarkIntersectionDense -run -
 func BenchmarkIntersectionDenseRoaring(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := roaring.New()
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Add(uint32(r.Int31n(int32(SZ1))))
 	}
 	s2 := roaring.New()
-	sz = 10000000
-	initsize = 65000
-	for i := 0; i < initsize; i++ {
-		s2.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Add(uint32(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := 0
@@ -187,16 +164,12 @@ func BenchmarkIntersectionDenseGoroar(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := goroar.New()
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Add(uint32(r.Int31n(int32(SZ1))))
 	}
 	s2 := goroar.New()
-	sz = 10000000
-	initsize = 65000
-	for i := 0; i < initsize; i++ {
-		s2.Add(uint32(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Add(uint32(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := 0
@@ -212,16 +185,12 @@ func BenchmarkUnionBitset(b *testing.B) {
 	b.StopTimer()
 	r := rand.New(rand.NewSource(0))
 	s1 := bitset.New(0)
-	sz := 150000
-	initsize := 65000
-	for i := 0; i < initsize; i++ {
-		s1.Set(uint(r.Int31n(int32(sz))))
+	for i := 0; i < N1; i++ {
+		s1.Set(uint(r.Int31n(int32(SZ1))))
 	}
 	s2 := bitset.New(0)
-	sz = 1000000
-	initsize = 650
-	for i := 0; i < initsize; i++ {
-		s2.Set(uint(r.Int31n(int32(sz))))
+	for i := 0; i < N2; i++ {
+		s2.Set(uint(r.Int31n(int32(SZ2))))
 	}
 	b.StartTimer()
 	card := uint(0)
@@ -230,6 +199,7 @@ func BenchmarkUnionBitset(b *testing.B) {
 		card = card + s3.Count()
 	}
 }
+
 // go test -bench BenchmarkUnion -run -
 func BenchmarkUnionCRoaring(b *testing.B) {
 	b.StopTimer()
@@ -254,7 +224,6 @@ func BenchmarkUnionCRoaring(b *testing.B) {
 	}
 }
 
-
 // go test -bench BenchmarkUnion -run -
 func BenchmarkUnionRoaring(b *testing.B) {
 	b.StopTimer()
@@ -278,7 +247,6 @@ func BenchmarkUnionRoaring(b *testing.B) {
 		card = card + int(s3.GetCardinality())
 	}
 }
-
 
 // go test -bench BenchmarkUnion -run -
 func BenchmarkUnionGoRoar(b *testing.B) {
@@ -305,7 +273,6 @@ func BenchmarkUnionGoRoar(b *testing.B) {
 	}
 }
 
-
 // go test -bench BenchmarkSize -run -
 func BenchmarkSizeBitset(b *testing.B) {
 	b.StopTimer()
@@ -325,6 +292,7 @@ func BenchmarkSizeBitset(b *testing.B) {
 	fmt.Printf("%.1f MB ", float32(s1.BinaryStorageSize()+s2.BinaryStorageSize())/(1024.0*1024))
 
 }
+
 // go test -bench BenchmarkSize -run -
 func BenchmarkSizeCRoaring(b *testing.B) {
 	b.StopTimer()
@@ -343,7 +311,6 @@ func BenchmarkSizeCRoaring(b *testing.B) {
 	}
 	fmt.Printf("%.1f MB ", float32(s1.SerializedSizeInBytes()+s2.SerializedSizeInBytes())/(1024.0*1024))
 }
-
 
 // go test -bench BenchmarkSize -run -
 func BenchmarkSizeRoaring(b *testing.B) {
@@ -393,6 +360,7 @@ func BenchmarkSetBitset(b *testing.B) {
 		s.Set(uint(r.Int31n(int32(sz))))
 	}
 }
+
 // go test -bench BenchmarkSet -run -
 func BenchmarkSetRCoaring(b *testing.B) {
 	b.StopTimer()
@@ -507,6 +475,7 @@ func BenchmarkCountBitset(b *testing.B) {
 		s.Count()
 	}
 }
+
 // go test -bench BenchmarkCount -run -
 func BenchmarkCountCRoaring(b *testing.B) {
 	b.StopTimer()
