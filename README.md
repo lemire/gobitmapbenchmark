@@ -12,6 +12,10 @@ A Go project to benchmark various bitmap implementations (this is not a library!
 
 ### Usage
 
+For a comparison between gocroaring and roaring on real data, try:
+
+          go test -bench BenchmarkReal -run -
+
 Type
 
           go test -bench Benchmark -run -
