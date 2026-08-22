@@ -1,281 +1,316 @@
-package roaring
+package bitmapbench
 
 import (
+	"bytes"
 	"fmt"
-	//"math/rand"
-	"github.com/RoaringBitmap/gocroaring"
-	"github.com/RoaringBitmap/roaring"
-	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
-	"strings"
-  "bytes"
 	"testing"
-	//"bufio"
 
+	"github.com/RoaringBitmap/gocroaring"
+	"github.com/RoaringBitmap/roaring/v2"
 )
 
+const datadir = "realdata"
+
 func readOneIntegerFile(path string) ([]uint32, error) {
-	var answer []uint32
-	dat, err := ioutil.ReadFile(path)
+	dat, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Println("couldn't read ", path)
-		return answer, err
+		return nil, err
 	}
-	s := string(dat)
-	idx := strings.Index(s, "\n")
-	if idx != -1 {
-		s = s[0:idx]
+	if i := bytes.IndexByte(dat, '\n'); i >= 0 {
+		dat = dat[:i]
 	}
-	justnumbers := strings.Split(s, ",")
-	howmany := len(justnumbers)
-	answer = make([]uint32, howmany)
-	for i := 0; i < howmany; i++ {
-		var value int
-		value, err = strconv.Atoi(justnumbers[i])
-		if err != nil {
-			fmt.Println("Not a number? ", justnumbers[i])
-			break
+	dat = bytes.TrimSpace(dat)
+	if len(dat) == 0 {
+		return []uint32{}, nil
+	}
+	parts := bytes.Split(dat, []byte{','})
+	out := make([]uint32, 0, len(parts))
+	for _, p := range parts {
+		p = bytes.TrimSpace(p)
+		if len(p) == 0 {
+			continue
 		}
-		answer[i] = uint32(value)
+		v, err := strconv.ParseUint(string(p), 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", path, err)
+		}
+		out = append(out, uint32(v))
 	}
-	return answer, err
+	return out, nil
 }
 
-func readAllIntegerFiles(dirname string, extension string) ([][]uint32, error) {
+func readAllIntegerFiles(dirname string) ([][]uint32, error) {
 	var data [][]uint32
-	err := filepath.Walk(dirname, func(path string, info os.FileInfo, err error) error {
-		if filepath.Ext(path) == extension {
-			onearray, err := readOneIntegerFile(path)
-			if err == nil {
-				data = append(data, onearray)
-			} else {
-				return err
-			}
+	err := filepath.WalkDir(dirname, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
+		if d.IsDir() || filepath.Ext(path) != ".txt" {
+			return nil
+		}
+		one, err := readOneIntegerFile(path)
+		if err != nil {
+			return err
+		}
+		data = append(data, one)
 		return nil
 	})
 	return data, err
 }
 
-const datadir = "realdata"
+func datasetDirs() ([]string, error) {
+	entries, err := os.ReadDir(datadir)
+	if err != nil {
+		return nil, err
+	}
+	var dirs []string
+	for _, e := range entries {
+		if e.IsDir() {
+			dirs = append(dirs, filepath.Join(datadir, e.Name()))
+		}
+	}
+	return dirs, nil
+}
 
 func convertToRoaring(arrays [][]uint32) []*roaring.Bitmap {
-	howmany := len(arrays)
-	answer := make([]*roaring.Bitmap, howmany)
-	for i := 0; i < howmany; i++ {
-		answer[i] = roaring.BitmapOf(arrays[i]...)
-    answer[i].RunOptimize()
+	out := make([]*roaring.Bitmap, len(arrays))
+	for i, a := range arrays {
+		bm := roaring.BitmapOf(a...)
+		bm.RunOptimize()
+		out[i] = bm
 	}
-	return answer
+	return out
 }
+
 func convertToCRoaring(arrays [][]uint32) []*gocroaring.Bitmap {
-	howmany := len(arrays)
-	answer := make([]*gocroaring.Bitmap, howmany)
-	for i := 0; i < howmany; i++ {
-		answer[i] = gocroaring.New(arrays[i]...)
-    answer[i].RunOptimize()
+	out := make([]*gocroaring.Bitmap, len(arrays))
+	for i, a := range arrays {
+		bm := gocroaring.New(a...)
+		bm.RunOptimize()
+		out[i] = bm
 	}
-	return answer
+	return out
 }
-
-
 
 func massClone(bitmaps []*roaring.Bitmap) []*roaring.Bitmap {
-	answer := make([]*roaring.Bitmap, len(bitmaps))
-	for i, b := range bitmaps {
-		answer[i] = b.Clone()
+	out := make([]*roaring.Bitmap, len(bitmaps))
+	for i, bm := range bitmaps {
+		out[i] = bm.Clone()
 	}
-	return answer
+	return out
 }
 
 func massCClone(bitmaps []*gocroaring.Bitmap) []*gocroaring.Bitmap {
-	answer := make([]*gocroaring.Bitmap, len(bitmaps))
-	for i, b := range bitmaps {
-		answer[i] = b.Clone()
+	out := make([]*gocroaring.Bitmap, len(bitmaps))
+	for i, bm := range bitmaps {
+		out[i] = bm.Clone()
 	}
-	return answer
+	return out
 }
 
-// go test -bench BenchmarkReal -run -
-func BenchmarkReal(b *testing.B) {
-	fmt.Println("gocroaring version ", gocroaring.CRoaringMajor, ".", gocroaring.CRoaringMinor, ".", gocroaring.CRoaringRevision)
-	_ = filepath.Walk(datadir, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() && path != datadir {
-			arrays, err := readAllIntegerFiles(path, ".txt")
+func TestSerializationRoundTrip(t *testing.T) {
+	dirs, err := datasetDirs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, dir := range dirs {
+		t.Run(filepath.Base(dir), func(t *testing.T) {
+			arrays, err := readAllIntegerFiles(dir)
 			if err != nil {
-				fmt.Println("can't benchmark ", err)
+				t.Fatal(err)
 			}
-			howmany := len(arrays)
-			fmt.Println(" ====== ")
-
-			fmt.Println("read ", howmany, " arrays from ", path)
-			fmt.Println("")
-
-			var bitmaps []*roaring.Bitmap
-			b.Run("roaring creating "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					bitmaps = convertToRoaring(arrays)
-				}
-			})
-			var cbitmaps []*gocroaring.Bitmap
-			b.Run("gocroaring creating "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					cbitmaps = convertToCRoaring(arrays)
-				}
-			})
-
-
-
-			for i := 0; i < howmany; i++ {
+			if len(arrays) == 0 {
+				t.Fatal("no arrays loaded")
+			}
+			bitmaps := convertToRoaring(arrays)
+			cbitmaps := convertToCRoaring(arrays)
+			for i := range arrays {
 				buf := make([]byte, cbitmaps[i].SerializedSizeInBytes())
-				cbitmaps[i].Write(buf) // we omit error handling
-        newrb := roaring.New()
-				newrb.ReadFrom(bytes.NewReader(buf))
-				if !newrb.Equals(bitmaps[i]) {
-					panic("bug")
+				if err := cbitmaps[i].Write(buf); err != nil {
+					t.Fatalf("gocroaring write %d: %v", i, err)
+				}
+				got := roaring.New()
+				if _, err := got.ReadFrom(bytes.NewReader(buf)); err != nil {
+					t.Fatalf("roaring read %d: %v", i, err)
+				}
+				if !got.Equals(bitmaps[i]) {
+					t.Fatalf("gocroaring -> roaring mismatch at %d", i)
+				}
+
+				var buffer bytes.Buffer
+				if _, err := bitmaps[i].WriteTo(&buffer); err != nil {
+					t.Fatalf("roaring write %d: %v", i, err)
+				}
+				cgot, err := gocroaring.Read(buffer.Bytes())
+				if err != nil {
+					t.Fatalf("gocroaring read %d: %v", i, err)
+				}
+				if !cgot.Equals(cbitmaps[i]) {
+					t.Fatalf("roaring -> gocroaring mismatch at %d", i)
 				}
 			}
-			for i := 0; i < howmany; i++ {
-				buffer := new(bytes.Buffer)
-				_, err:= bitmaps[i].WriteTo(buffer)
-        if err != nil {
-          panic("bug")
-        }
-        buf := buffer.Bytes()
-        newrb,_ := gocroaring.Read(buf)
-				if !newrb.Equals(cbitmaps[i]) {
-					panic("bug")
-				}
-			}
-			fmt.Println("")
-			for i := 0; i < howmany; i++ {
-				if uint64(cbitmaps[i].SerializedSizeInBytes()) != bitmaps[i].GetSerializedSizeInBytes() {
-					fmt.Println("bitmap ", i, " differ in size?")
-					fmt.Println("roaring bitmap size: ", bitmaps[i].GetSerializedSizeInBytes())
-					fmt.Println("croaring bitmap size: ", cbitmaps[i].SerializedSizeInBytes())
-					bs := bitmaps[i].Stats()
+		})
+	}
+}
 
-					fmt.Println("roaring stats: cardinality = ", bs.Cardinality, " n_containers = ", bs.Containers, " n_array_containers = ", bs.ArrayContainers, " n_run_containers = ", bs.RunContainers, " n_bitset_containers = ", bs.BitmapContainers, " n_bytes_array_containers = ", bs.ArrayContainerBytes, " n_bytes_run_containers = ", bs.RunContainerBytes, " n_bytes_bitset_containers = ", bs.BitmapContainerBytes, " n_values_array_containers = ", bs.ArrayContainerValues, " n_values_run_containers = ", bs.RunContainerValues, " n_values_bitset_containers = ", bs.BitmapContainerValues)
-					s := cbitmaps[i].Stats()
-
-					fmt.Println("croaring stats: cardinality = ", s["cardinality"], " n_containers = ", s["n_containers"], " n_array_containers = ", s["n_array_containers"], " n_run_containers = ", s["n_run_containers"], " n_bitset_containers = ", s["n_bitset_containers"], " n_bytes_array_containers = ", s["n_bytes_array_containers"], " n_bytes_run_containers = ", s["n_bytes_run_containers"], " n_bytes_bitset_containers = ", s["n_bytes_bitset_containers"], " n_values_array_containers = ", s["n_values_array_containers"], " n_values_run_containers = ", s["n_values_run_containers"], " n_values_bitset_containers = ", s["n_values_bitset_containers"])
-
-				}
-			}
-			b.Run("roaring clone "+path, func(b *testing.B) {
-
-				for i := 0; i < b.N; i++ {
-					_ = massClone(bitmaps)
-				}
-			})
-			b.Run("gocroaring clone "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-
-					_ = massCClone(cbitmaps)
-				}
-			})
-			fmt.Println("")
-
-
-			fmt.Println("")
-
-			b.Run("roaring iterate "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					tot := uint64(0)
-					for _, b := range bitmaps {
-						it := b.Iterator()
-						for it.HasNext() {
-							tot += uint64(it.Next())
-						}
-					}
-				}
-			})
-			b.Run("gocroaring iterate "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					tot := uint64(0)
-					for _, b := range cbitmaps {
-						it := b.Iterator()
-						for it.HasNext() {
-							tot += uint64(it.Next())
-						}
-					}
-
-				}
-			})
-			fmt.Println("")
-
-			b.Run("roaring toArray "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					tot := uint64(0)
-					for _, b := range bitmaps {
-						tot += uint64(len(b.ToArray()))
-					}
-				}
-			})
-			b.Run("gocroaring toArray "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					tot := uint64(0)
-					for _, b := range cbitmaps {
-						tot += uint64(len(b.ToArray()))
-					}
-				}
-			})
-			fmt.Println("")
-
-			b.Run("roaring pairwise AND "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					tot := uint64(0)
-					for i := 0; i+1 < howmany; i++ {
-						b := roaring.And(bitmaps[i], bitmaps[i+1])
-						tot += uint64(b.GetCardinality())
-					}
-				}
-			})
-			b.Run("gocroaring pairwise AND "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					tot := uint64(0)
-					for i := 0; i+1 < howmany; i++ {
-						b := gocroaring.And(cbitmaps[i], cbitmaps[i+1])
-						tot += uint64(b.Cardinality())
-					}
-				}
-			})
-			fmt.Println("")
-			b.Run("roaring pairwise OR "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					tot := uint64(0)
-					for i := 0; i+1 < howmany; i++ {
-						b := roaring.Or(bitmaps[i], bitmaps[i+1])
-						tot += uint64(b.GetCardinality())
-					}
-				}
-			})
-			b.Run("gocroaring pairwise OR "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					tot := uint64(0)
-					for i := 0; i+1 < howmany; i++ {
-						b := gocroaring.Or(cbitmaps[i], cbitmaps[i+1])
-						tot += uint64(b.Cardinality())
-					}
-				}
-			})
-			fmt.Println("")
-			b.Run("roaring fastOR "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					roaring.FastOr(bitmaps...)
-				}
-			})
-			b.Run("gocroaring fastOR "+path, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					gocroaring.FastOr(cbitmaps...)
-				}
-			})
-			fmt.Println("")
-			fmt.Println("")
-
+func BenchmarkReal(b *testing.B) {
+	b.Logf("gocroaring / CRoaring %d.%d.%d", gocroaring.CRoaringMajor, gocroaring.CRoaringMinor, gocroaring.CRoaringRevision)
+	dirs, err := datasetDirs()
+	if err != nil {
+		b.Fatal(err)
+	}
+	for _, dir := range dirs {
+		name := filepath.Base(dir)
+		arrays, err := readAllIntegerFiles(dir)
+		if err != nil {
+			b.Fatal(err)
 		}
-		return nil
-	})
+		howmany := len(arrays)
+		if howmany == 0 {
+			b.Fatalf("no arrays loaded from %s", dir)
+		}
+		b.Logf("read %d arrays from %s", howmany, dir)
+
+		bitmaps := convertToRoaring(arrays)
+		cbitmaps := convertToCRoaring(arrays)
+
+		b.Run("roaring/creating/"+name, func(b *testing.B) {
+			var out []*roaring.Bitmap
+			for b.Loop() {
+				out = convertToRoaring(arrays)
+			}
+			runtime.KeepAlive(out)
+		})
+		b.Run("gocroaring/creating/"+name, func(b *testing.B) {
+			var out []*gocroaring.Bitmap
+			for b.Loop() {
+				out = convertToCRoaring(arrays)
+			}
+			runtime.KeepAlive(out)
+		})
+
+		b.Run("roaring/clone/"+name, func(b *testing.B) {
+			var out []*roaring.Bitmap
+			for b.Loop() {
+				out = massClone(bitmaps)
+			}
+			runtime.KeepAlive(out)
+		})
+		b.Run("gocroaring/clone/"+name, func(b *testing.B) {
+			var out []*gocroaring.Bitmap
+			for b.Loop() {
+				out = massCClone(cbitmaps)
+			}
+			runtime.KeepAlive(out)
+		})
+
+		b.Run("roaring/iterate/"+name, func(b *testing.B) {
+			var tot uint64
+			for b.Loop() {
+				tot = 0
+				for _, bm := range bitmaps {
+					it := bm.Iterator()
+					for it.HasNext() {
+						tot += uint64(it.Next())
+					}
+				}
+			}
+			runtime.KeepAlive(tot)
+		})
+		b.Run("gocroaring/iterate/"+name, func(b *testing.B) {
+			var tot uint64
+			for b.Loop() {
+				tot = 0
+				for _, bm := range cbitmaps {
+					it := bm.Iterator()
+					for it.HasNext() {
+						tot += uint64(it.Next())
+					}
+				}
+			}
+			runtime.KeepAlive(tot)
+		})
+
+		b.Run("roaring/toArray/"+name, func(b *testing.B) {
+			var tot uint64
+			for b.Loop() {
+				tot = 0
+				for _, bm := range bitmaps {
+					tot += uint64(len(bm.ToArray()))
+				}
+			}
+			runtime.KeepAlive(tot)
+		})
+		b.Run("gocroaring/toArray/"+name, func(b *testing.B) {
+			var tot uint64
+			for b.Loop() {
+				tot = 0
+				for _, bm := range cbitmaps {
+					tot += uint64(len(bm.ToArray()))
+				}
+			}
+			runtime.KeepAlive(tot)
+		})
+
+		b.Run("roaring/pairwiseAND/"+name, func(b *testing.B) {
+			var tot uint64
+			for b.Loop() {
+				tot = 0
+				for i := 0; i+1 < howmany; i++ {
+					tot += roaring.And(bitmaps[i], bitmaps[i+1]).GetCardinality()
+				}
+			}
+			runtime.KeepAlive(tot)
+		})
+		b.Run("gocroaring/pairwiseAND/"+name, func(b *testing.B) {
+			var tot uint64
+			for b.Loop() {
+				tot = 0
+				for i := 0; i+1 < howmany; i++ {
+					tot += gocroaring.And(cbitmaps[i], cbitmaps[i+1]).Cardinality()
+				}
+			}
+			runtime.KeepAlive(tot)
+		})
+
+		b.Run("roaring/pairwiseOR/"+name, func(b *testing.B) {
+			var tot uint64
+			for b.Loop() {
+				tot = 0
+				for i := 0; i+1 < howmany; i++ {
+					tot += roaring.Or(bitmaps[i], bitmaps[i+1]).GetCardinality()
+				}
+			}
+			runtime.KeepAlive(tot)
+		})
+		b.Run("gocroaring/pairwiseOR/"+name, func(b *testing.B) {
+			var tot uint64
+			for b.Loop() {
+				tot = 0
+				for i := 0; i+1 < howmany; i++ {
+					tot += gocroaring.Or(cbitmaps[i], cbitmaps[i+1]).Cardinality()
+				}
+			}
+			runtime.KeepAlive(tot)
+		})
+
+		b.Run("roaring/fastOR/"+name, func(b *testing.B) {
+			var out *roaring.Bitmap
+			for b.Loop() {
+				out = roaring.FastOr(bitmaps...)
+			}
+			runtime.KeepAlive(out)
+		})
+		b.Run("gocroaring/fastOR/"+name, func(b *testing.B) {
+			var out *gocroaring.Bitmap
+			for b.Loop() {
+				out = gocroaring.FastOr(cbitmaps...)
+			}
+			runtime.KeepAlive(out)
+		})
+	}
 }

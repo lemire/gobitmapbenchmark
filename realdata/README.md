@@ -1,16 +1,13 @@
-Real data sets for bitmap testing
-==
+# Real data sets for bitmap testing
 
-Essentially, each file represents a set of integer values. You can create
-bitmaps out of these files.
+Each file is a comma-separated set of 32-bit integers. The benchmarks build
+bitmaps from these files.
 
-In many cases, the description of the data sets is provided in:
+Dataset descriptions are in:
 
-* Samy Chambi, Daniel Lemire, Owen Kaser, Robert Godin, Better bitmap performance with Roaring bitmaps, arXiv:1402.6407.
-http://arxiv.org/abs/1402.6407
+* Samy Chambi, Daniel Lemire, Owen Kaser, Robert Godin, [Better bitmap performance with Roaring bitmaps](https://arxiv.org/abs/1402.6407).
 
-To be used with software published on http://roaringbitmap.org/
-(Specifically at http://roaringbitmap.org/RoaringBitmap-0.3.4-SNAPSHOT-sources.jar )
+See also [https://roaringbitmap.org/](https://roaringbitmap.org/).
 
 
 

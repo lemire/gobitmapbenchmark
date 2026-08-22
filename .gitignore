@@ -1,0 +1,6 @@
+*.test
+*.out
+*.prof
+cpu.pprof
+mem.pprof
+.DS_Store
